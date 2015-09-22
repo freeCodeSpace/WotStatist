@@ -109,7 +109,6 @@ body {
             margin-top: -1px;
             color: silver;
         }
-                /* Кнопка обновить страницу */
             #reloadPage {
                 margin-right: 10px;
                 margin-top: 5px;
@@ -160,12 +159,13 @@ body {
     #box { text-align: center; }
             /* Общий стиль контейнера для обрамления контента */
         #contentBox {
-            margin: 10px;
+            margin: 0 auto;
+            max-width: 2000px;
+            padding: 15px;
+            padding-top: 40px;
+            padding-bottom: 40px;
             text-align: center;
             font-size: 16px;
-            padding: 5px;
-            padding-top: 30px;
-            padding-bottom: 30px;
             overflow: hidden;
         }
     /* Общий стиль границы для внутренних ячеек */
@@ -281,6 +281,7 @@ body {
         #tankDataTable .cellXp { width: 50px; max-width: 400px;}
         #tankDataTable .cellAllxp { min-width: 80px; max-width: 400px;}
         #tankDataTable .cellLow { width: 50px;}
+
     /* > Таблица итоговых данных <
     =============================================================== */
     .titleText3 {
@@ -306,6 +307,20 @@ body {
             /* Размерность ячеек */
         .tableItog tr td { width: 80px; }
         .tableItog .cellBig { width: 140px; }
+
+    /* > Таблица итоговых данных <
+    =============================================================== */
+        /* Заголовок */
+    .tableAllTime thead tr {
+        font-weight: 400;
+    }
+
+    /* > Разное <
+    =============================================================== */
+    .time {
+        color: #9E9E9E;
+        font-family: Calibri;
+    }
 
 /* ===================================================================
    > Стили страницы: Доходность #tabProfit <
@@ -385,6 +400,96 @@ body {
         .tabCred tbody tr td:first-child { border-right: none !important; }
 
 /* ===================================================================
+   > Стили страницы: Доходность #tabGraphics <
+=================================================================== */
+    .graphTitleBox {
+        height: 32px;
+        margin: 0;
+        margin: 0 auto;
+        line-height: 32px;
+        padding: 0;
+        overflow: hidden;
+    }
+        .graphTitleColor1,
+        .graphTitleColor2,
+        .graphTitleColor3 {
+            height: 10px;
+            width: 10px;
+            display: inline-block;
+            margin-right: 2px;
+        }
+        .graphTitleColor1 { background-color: #97BBCD; }
+        .graphTitleColor2 { 
+            background-color: #FFDFDF;
+            margin-left: 6px;
+        }
+        .graphTitleColor3 {
+            background-color: #ABF8AB;
+            margin-left: 6px;
+        }
+
+        .graphTitleText1, .graphTitleText2 {
+            float: left;
+            color: navy;
+            margin-top: 0px;
+            margin-bottom: 5px;
+            font-size: 18px;
+            font-family: Arial;
+            margin-left: 20px;
+        }
+        .graphTitleText2 {
+            float: right;
+            color: navy;
+            margin-left: 0px;
+            margin-right: 20px;
+        }
+    .titleText5 {
+        color: orange;
+        font-size: 16px;
+        font-family: Arial;
+        text-align: center;
+        white-space: nowrap;
+    }
+    /* Стили контейнеров для canvas */
+    .graphBox {
+        padding: 20px;
+        padding-top: 2px;
+        text-align: center;
+        padding-bottom: 0;
+        overflow: hidden;
+    }
+        .graphBox1, .graphBox2 {
+            display: inline-block;
+            width: 48%;
+            float: left;
+            max-width: 960px;
+            /*max-width: 800px;*/
+        }
+        .graphBox2 {
+            float: right;
+        }
+        canvas {
+            max-height: 380px;
+        }
+        /* Контейнер для отрисовки средних значений */
+        .averPoint {
+            display: inline-block;
+            margin-left: 3px;
+            margin-right: 3px;
+            padding-left: 5px;
+            padding-right: 5px;
+            border-radius: 4px;
+            border: 1px solid #E1E2FF;
+            margin-bottom: 3px;
+            font-family: Calibri;
+        }
+            .averPointNum {
+                font-weight: 400;
+                color: #ccc;
+                /*font-family: Arial;*/
+                margin-right: 5px;
+            }
+/* ===================================================================
    > Стили страницы: Карты #tabMaps <
 =================================================================== */
     .tableMaps {
@@ -403,7 +508,3 @@ body {
             /* Строки таблицы */
         .tableMaps tbody tr td { border-top: 1px solid #F5F5F5; }
         .tableMaps tbody tr:first-child td { border-top: none; }
-
-        /* Вариант стиля таблицы №2 */
-            /* Строки таблицы */
-        /*.tableMaps tbody tr td { border: 1px solid #F5F5F5; }*/

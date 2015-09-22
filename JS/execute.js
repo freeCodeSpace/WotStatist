@@ -73,6 +73,10 @@ function getDataFromFile(action) {
                     case 'profit' :
                         executeProfit(data); // передается объект
                     break;
+                  // вызывается обработка данных для контента: Графики
+                    case 'graphics' :
+                        executeGraphics(data); // передается объект
+                    break;
                   // вызывается обработка данных для контента: Карты
                     case 'maps' :
                         executeMaps(data); // передается объект
@@ -101,6 +105,10 @@ function routePage() {
       // запускается контент Доходность
         case '#tabProfit' :
             profitPage();
+        break;
+      // запускается контент Графики
+        case '#tabGraphics' :
+            graphicsPage();
         break;
       // запускается контент Карты
         case '#tabMaps' :
@@ -132,6 +140,13 @@ $('#tabProfit').click( function() {
     return false; //ссылка не вернет свой якорь
 });
 
+$('#tabGraphics').click( function() {
+    window.location.hash = '#tabGraphics';
+    graphicsPage();
+    $('html, body').scrollTop(0); // Мгновенная прокрутка вверх страницы (при клике по #)
+    return false; //ссылка не вернет свой якорь
+});
+
 $('#tabMaps').click( function() {
     window.location.hash = '#tabMaps';
     mapsPage();
@@ -146,6 +161,7 @@ $('#tabMaps').click( function() {
 function mainPage() {
     $('#tabProfit').removeClass('active'); /* Реализация подсветки необ. пункта меню */
     $('#tabMaps').removeClass('active');
+    $('#tabGraphics').removeClass('active');
     $('#tabMain').addClass('active');
     getDataFromFile('main'); // Реализация главного вывода контента (для данного действия)
 }
@@ -154,16 +170,27 @@ function mainPage() {
 function profitPage() {
     $('#tabMain').removeClass('active');
     $('#tabMaps').removeClass('active');
+    $('#tabGraphics').removeClass('active');
     $('#tabProfit').addClass('active');
-    getDataFromFile('profit'); // Реализация главного вывода контента (для данного действия)
+    getDataFromFile('profit');
+}
+
+/* Сценарий для страницы Графики */
+function graphicsPage() {
+    $('#tabMain').removeClass('active');
+    $('#tabProfit').removeClass('active');
+    $('#tabMaps').removeClass('active');
+    $('#tabGraphics').addClass('active');
+    getDataFromFile('graphics');
 }
 
 /* Сценарий для страницы Карты */
 function mapsPage() {
     $('#tabMain').removeClass('active');
     $('#tabProfit').removeClass('active');
+    $('#tabGraphics').removeClass('active');
     $('#tabMaps').addClass('active');
-    getDataFromFile('maps'); // Реализация главного вывода контента (для данного действия)
+    getDataFromFile('maps');
 }
 
 /* ===================================================================
@@ -287,6 +314,58 @@ function prnTime(val) {
     }
 }
 
+/* Ф-ия которая переводит секунды в часы минуты и секунды (Возвращает строку с временем) */
+function convertTimeSec(allSeconds) {
+    var allSeconds = parseInt(allSeconds); // отбросить дробную часть (если есть)
+    var hoursConvers = allSeconds % 3600; // Остаток от вычисления часов
+    var s = hoursConvers % 60; // итоговое значение секунд
+    var m = (hoursConvers - s) / 60; // итоговое значение минут
+    var h = (allSeconds - hoursConvers) / 3600 ; // итоговое значение часов
+    if (h != 0) { // если есть значение часов
+        var time = h + "<span class='time'>ч </span>" + m + "<span class='time'>м</span>"; // время с знач: h m
+        return time;
+    } else {
+        var time = m + "<span class='time'>м </span>" + s + "<span class='time'>с</span>"; // время с знач: m s
+        return time;
+    }
+}
+
+/* Ф-ия создания массива заполненного текущими средними значениями для построения 2-го графика (используется в: tabGraphics) 
+   Принимает массив знач. из которого вычисл. среднее.
+   Вычисление текущего среднего:
+   Перебор массива значений урона, на каждой итерации вычисляется среднее, по знач. длины массива и заносится в масс. средних. */
+function createAverArrGraph(arrA) {
+    var arrSlice = []; // временный массив усечений
+    var arrAver = []; // массив средних значений
+    for(var m=0, elem_max_val = arrA.length;  m<elem_max_val; m+=1) {
+        arrSlice = arrA.slice(0, (m + 1)); // присвоить усеченный массив прохода, вида: [a], [a, b], [a, b, c]...
+        var averCur = findAverInArr(arrSlice); // передать усеч. массив что бы в нем вычислить среднее
+        arrAver.push(averCur); // добавить получ. среднее знач (выше) в создаваемый массив средних
+    }
+    return arrAver; // вернуть массив средних значений
+}
+
+/* Ф-ия вычисляет среднее значение в массиве (используется в ф-ии createAverArrGraph для: tabGraphics) */
+function findAverInArr(arrA) {
+    var aver = 0; // переменная средняя
+    var arrLen = arrA.length;
+    if (arrLen === 0) return 0; // заглушка если пустой массив
+    for(var m=0, elem_max_val = arrLen;  m<elem_max_val; m+=1) {
+        aver += arrA[m]; // приростить на значение из массива (для вычисл. текущего среднего)
+    }
+    return Math.round(aver/arrLen); // вернуть среднее знач. в массиве, отбросив дробь
+}
+
+/* Ф-ия распечатывает элементы массива (используется в: tabGraphics) */
+function prnArrAver(arrA) {
+    var len = arrA.length;
+    var str = '<b>Средние значения: </b>';
+    for(var m=0, elem_max_val = len;  m<elem_max_val; m+=1) {
+        str += '<span class="averPoint"><b class="averPointNum">' + (m+1)+ ': </b>' + getNumF(arrA[m], 2) + '</span> &nbsp;';
+    }
+    return str;
+}
+
 /* ===================================================================
    > Реализация Действий <
 =================================================================== */
@@ -302,7 +381,7 @@ function executeMain(data) {
     var lastB = data[nick]._session.lastBattleID; // определить ID последнего боя
     for (var key in data[nick].battles) { // переберем все объекты боев
 
-        if( key == lastB ) { // если это последний бой
+        if( key == lastB ) { // если это последний бой (отдельное заполнение результатов для последнего боя)
             lastObj = { // заполним, сохранив в объекте
                 'wn8' : data[nick].battles[key].ratings.wn8,
                 'xwn8' : data[nick].battles[key].ratings.xwn8,
@@ -317,6 +396,7 @@ function executeMain(data) {
             }
         }
 
+        // Заполнение данными общего объекта боев новыми значениями:
         propName = data[nick].battles[key].vehicle.localShortName;
         if( game.hasOwnProperty(propName) == false ) { //если еще нет такого свойства
 
@@ -340,7 +420,9 @@ function executeMain(data) {
                 'armorBlocked' : data[nick].battles[key].personal.damageBlockedByArmor,
                 'asistRadio' : data[nick].battles[key].personal.asistRadio,
                 'asistTrack' : data[nick].battles[key].personal.asistTrack,
-                'xwn8' : data[nick].battles[key].ratings.xwn8
+                'xwn8' : data[nick].battles[key].ratings.xwn8,
+                'duration' : data[nick].battles[key].battle.duration,
+                'lifeTime' : data[nick].battles[key].personal.lifeTime
             };
         } else { // если уже есть такое свойство
             game[propName].damage += data[nick].battles[key].personal.damageDealt; // прибавим значение
@@ -363,6 +445,8 @@ function executeMain(data) {
             game[propName].asistRadio += data[nick].battles[key].personal.asistRadio;
             game[propName].asistTrack += data[nick].battles[key].personal.asistTrack;
             game[propName].xwn8 += data[nick].battles[key].ratings.xwn8;
+            game[propName].duration += data[nick].battles[key].battle.duration;
+            game[propName].lifeTime += data[nick].battles[key].personal.lifeTime;
         }
     }
 
@@ -410,23 +494,26 @@ function executeMain(data) {
         '<table align="center" cellpadding="5" cellspacing="0" id="tankDataTable">' +
             '<thead>' +
                 '<tr>' +
-                    '<td class="borderCell cellTank">Техника</td>' + 
-                    '<td class="borderCell">mWN8</td>' + 
+                    '<td class="borderCell cellTank">Техника</td>' +
+                    '<td class="borderCell">mWN8</td>' +
                     '<td class="borderCell">Ср. Урон</td>' +
                     '<td class="borderCell">%-побед</td>' + 
                     '<td class="borderCell">Дохода за бой</td>' +
                     '<td class="borderCell cellXp">Ср. Опыт</td>' +
                     '<td class="borderCell">Σ Дохода</td>' +
                     '<td class="borderCell cellAllxp"> Σ Общего Опыта</td>' +
-                    '<td class="borderCell cellLow">Своб. опыта</td>' + 
-                    '<td class="borderCell cellLow">Фраги</td>' + 
-                    '<td class="borderCell cellLow">Фрагов за бой</td>' + 
-                    '<td class="borderCell">Blocked за бой</td>' + 
-                    '<td class="borderCell">Засвет за бой</td>' + 
-                    '<td class="borderCell">Asist за бой</td>' + 
-                    '<td class="borderCell">Σ Урона</td>' + 
-                    '<td class="borderCell cellLow">mxWn8</td>' + 
-                    '<td class="cellLow">Боев</td>' + 
+                    '<td class="borderCell cellLow">Своб. опыта</td>' +
+                    '<td class="borderCell cellLow">Фраги</td>' +
+                    '<td class="borderCell cellLow">Фрагов за бой</td>' +
+                    '<td class="borderCell">Blocked за бой</td>' +
+                    '<td class="borderCell">Засвет за бой</td>' +
+                    '<td class="borderCell">Asist за бой</td>' +
+                    // '<td class="borderCell">Σ Урона</td>' +
+                    '<td class="borderCell">Ср. t боя</td>' +
+                    '<td class="borderCell">Ср. t игры</td>' +
+                    '<td class="borderCell">∆t</td>' +
+                    // '<td class="borderCell cellLow">mxWn8</td>' +
+                    '<td class="cellLow">Боев</td>' +
                 '</tr>' +
             '</thead>' +
             '<tbody></tbody>' +
@@ -450,8 +537,11 @@ function executeMain(data) {
                 '<td class="borderCell">' + getNumF(game[ob].armorBlocked/game[ob].count, 2) + '</td>' + // Blocked за бой
                 '<td class="borderCell">' + getNumF(game[ob].asistRadio/game[ob].count, 2) + '</td>' + // Засвет за бой
                 '<td class="borderCell">' + getNumF((game[ob].asistTrack+game[ob].asistRadio)/game[ob].count, 2) + '</td>' + // Asist
-                '<td class="borderCell">' + getNumF(game[ob].damage, 2) + '</td>' + // Σ Урона
-                prnXwn8(game[ob].xwn8/game[ob].count) + // mxWn8
+                // '<td class="borderCell">' + getNumF(game[ob].damage, 2) + '</td>' + // Σ Урона
+                '<td class="borderCell">' + convertTimeSec(game[ob].duration/game[ob].count) + '</td>' + // Ср. t боя
+                '<td class="borderCell">' + convertTimeSec(game[ob].lifeTime/game[ob].count) + '</td>' + // Ср. t игры
+                '<td class="borderCell">' + convertTimeSec( ((game[ob].duration - game[ob].lifeTime)/game[ob].count) ) + '</td>' + // ∆t
+                // prnXwn8(game[ob].xwn8/game[ob].count) + // mxWn8
                 '<td class="cellLow">' + game[ob].count + '</td>' + // Боев
             '</tr>'
         );
@@ -507,6 +597,34 @@ function executeMain(data) {
                 '</tr>' +
             '</tbody>' +
         '</table>'
+    );
+
+    // Вывод итогов по времени:
+    $('#contentBox').append(
+        '<br><br><div class="titleText1">Итоги по времени:</div>' +
+        '<table align="center" cellpadding="5" cellspacing="0" class="tableLastBattle tableAllTime">' +
+            '<thead>' +
+                '<tr>' +
+                    '<td nowrap class="borderCell">Σ t боев</td>' +
+                    '<td nowrap class="borderCell">Σ t игр</td>' +
+                    '<td nowrap class="borderCell">Σ ∆t</td>' +
+                    '<td nowrap class="borderCell">Ср. t боя</td>' +
+                    '<td nowrap class="borderCell">Ср. t игры</td>' +
+                    '<td nowrap>∆t</td>' +
+                '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+                '<tr>' +
+                    '<td nowrap class="borderCell">' + convertTimeSec(data[nick]._session.duration) + '</td>' +
+                    '<td nowrap class="borderCell">' + convertTimeSec(data[nick]._session.lifeTime) + '</td>' +
+                    '<td nowrap class="borderCell">' + convertTimeSec((data[nick]._session.duration - data[nick]._session.lifeTime)) + '</td>' +
+                    '<td nowrap class="borderCell">' + convertTimeSec((data[nick]._session.duration / data[nick]._session.battles)) + '</td>' +
+                    '<td nowrap class="borderCell">' + convertTimeSec((data[nick]._session.lifeTime / data[nick]._session.battles)) + '</td>' +
+                    '<td nowrap>' + convertTimeSec( ((data[nick]._session.duration - data[nick]._session.lifeTime) / data[nick]._session.battles) ) + '</td>' +
+                '</tr>' +
+            '</tbody>' +
+        '</table>' +
+        '<div style="clear: both;">'
     );
 }
 
@@ -686,7 +804,7 @@ function executeProfit(data) {
             });
         }
     });
-    /* Ф-онал Свернуть */
+    /* Функционал Свернуть */
     $('.closedTab').click( function() {
         var elem1 = $(this).prev(); // Запомним таблицу 2
         var elem2 = $(this).prev().prev(); // Запомним таблицу 1
@@ -732,6 +850,238 @@ function prnTabCred() {
         '</table>'
     );
 }
+
+    /* > Вывод контента страницы: Графики #tabGraphics <
+    =============================================================== */
+function executeGraphics(data) {
+    $('#contentBox').html(''); // Предварительная очистка блока
+    //--> Добавление данных для построения графиков
+    //--------------------------------------------------------------
+    // Обработать данные доходности по танкам
+    var game = {}; // Пустой объект для хранения упорядоченных данных
+    var propName; // Для хранения названия техники (для заполнения объекта)
+    var createTime; // Для хранения знач. timestamp
+
+    // Обход объекта data
+    for (var key in data[nick].battles) { // переберем все объекты боев
+        propName = data[nick].battles[key].vehicle.localShortName; // имя танка
+        createTime = parseInt(data[nick].battles[key].battle.createTime); // метка времени (доп. приведена к Int)
+
+        // Заполнение объекта данными из объекта data
+        if( game.hasOwnProperty(propName) == false ) { //если еще нет такого свойства
+            game[propName] = {}; // важно создать пустой объект
+            // в начале создаться структура 'tankName' : { 'timeStamp' : { 'damage' : val, ... } }
+            game[propName][createTime] = { // занести новый объект (в объект) имя-значение метки времени
+                'damage' : data[nick].battles[key].personal.damageDealt, // урон
+                'gold' : data[nick].battles[key].accruals.pureCredits, // серебро
+            };
+            game[propName].keyOrder = [createTime]; // добавим элемент timeStamp в массив
+        } else { // если уже есть такое свойство (имя танка)
+            game[propName][createTime] = { // занести новый объект (в объект) имя-значение метки времени
+                'damage' : data[nick].battles[key].personal.damageDealt, // урон
+                'gold' : data[nick].battles[key].accruals.pureCredits, // серебро
+            };
+            game[propName].keyOrder.push(createTime); // добавим элемент timeStamp в массив
+        }
+    }
+    //-> Формирование объекта по танкам с организацией массивов (знач. осей, для графика):
+    // Осуществим сортировку массива ключей (для будущего сортированного вывода)
+    for(var ob in game) {
+        game[ob].keyOrder = game[ob].keyOrder.sort(); // отсортировать массивы ключей и переприсвоить
+    }
+    // объект который будет хранить упоряд. даные с массивами значений для построения графика
+    // формат obj { 'tank_name' : { 'osX': arr[], 'osY': arr[] }, ... }
+    var graphObj = {};
+    for(var ob in game) {
+        // Осуществим заполнение объекта graphObj из объекта game, согласно порядку следования ключей в массиве game.keyOrder
+        // Организуем обход массива ключей (меток времени) game.keyOrder
+        AR = game[ob].keyOrder; // Обозначим короткое имя массиву
+        for(var i=0, elem_max_val = AR.length;  i<elem_max_val; i+=1) {
+            var timeStamp = AR[i]; // обозначим временную метку
+            // Заполнение объекта graphObj:
+            if( graphObj.hasOwnProperty(ob) == false ) { //если еще нет такого свойства (назв. танка в объекте graphObj)
+                //-> Добавление массивов значений:
+                var n = i + 1; // Учет с первого боя ( а не с значения 0)
+                // Шкала X: Счетчик
+                var arrCountX = []; // массив значений для оси X (счетчик шагов)
+                arrCountX.push(n); // добавим значение в массив
+                // Шкала Y: Damage
+                var arrDamageY = []; // массив значений для оси Y (значения для построения)
+                arrDamageY.push(game[ob][timeStamp].damage); // добавим значение damage в массив
+                // Шкала X: Счетчик+Время
+                var arrCountTimeX = []; // массив значений для оси X (счетчик шагов+время)
+                var strCountTimeX = n + ') ' + prnTime(new Date(timeStamp*1000 - msk*60*60*1000).toLocaleTimeString());
+                arrCountTimeX.push(strCountTimeX); // добавим значение в массив
+                // Шкала Y: Gold
+                var arrGoldY = []; // массив значений для оси Y (значения для построения)
+                arrGoldY.push(game[ob][timeStamp].gold); // добавим значение gold в массив
+                //-> Заполнение объекта массивами:
+                graphObj[ob] = { //добавим такое свойство объекту и заполним параметрами
+                    'graphArrCountX' : arrCountX, // положим массив в объект (значение итераций)
+                    'graphArrDamageY' : arrDamageY, // значение Damage
+                    'graphArrCountTimeY' : arrCountTimeX, // значение Счетчик+Время
+                    'graphArrGoldY' : arrGoldY, // значение Серебро
+                };
+            } else { // если уже есть такое свойство
+                var n = i + 1;
+                // Шкала X: Счетчик
+                var arrCountX = graphObj[ob].graphArrCountX; // извлечем хранимый массив в graphObj и запомним в переменной
+                arrCountX.push(n);
+                graphObj[ob].graphArrCountX = arrCountX; // сохраним в объекте, значение добавленное в массив
+                // Шкала Y: Damage
+                var arrDamageY = graphObj[ob].graphArrDamageY;
+                arrDamageY.push(game[ob][timeStamp].damage);
+                graphObj[ob].graphArrDamageY = arrDamageY;
+                // Шкала X: Счетчик+Время
+                var arrCountTimeX = graphObj[ob].graphArrCountTimeY;
+                var strCountTimeX = n + ') ' + prnTime(new Date(timeStamp*1000 - msk*60*60*1000).toLocaleTimeString());
+                arrCountTimeX.push(strCountTimeX);
+                graphObj[ob].graphArrCountTimeY = arrCountTimeX;
+                // Шкала Y: Gold
+                var arrGoldY = graphObj[ob].graphArrGoldY;
+                arrGoldY.push(game[ob][timeStamp].gold);
+                graphObj[ob].graphArrGoldY = arrGoldY;
+            }
+        }
+    }
+    //--> Вычисления для графика Урон и наложение прямой - средний урон
+    //--------------------------------------------------------------
+    var countCanvas = 1;
+    var noGraph = true; // метка цикла для учета случая непостроения графиков
+    for(var obj in graphObj) { // Вывести обработанные данные доходности по танкам
+        if( graphObj[obj].graphArrCountX.length >= 5 ) { // не строить графики если боев меньше 5
+            //-> (1) Вычислиение среднего значений для графика - прямой (средний урон)
+            graphArrAverDamageY = [];
+            graphArrAverDamageY = createAverArrGraph(graphObj[obj].graphArrDamageY);
+            //-> (2) Вычислиение среднего значений для графика - прямой (средний доход)
+            graphArrAverGoldY = [];
+            graphArrAverGoldY = createAverArrGraph(graphObj[obj].graphArrGoldY);
+            //-> Добавление блоков html canvas
+            noGraph = false; // теперь сообщение 'нет графиков...' выведенно не будет (т.к. уже хотя бы 1-н будет)
+            var canvasDamageId = "canvasDamageId" + countCanvas;
+            var canvasGoldId = "canvasMoneyId" + countCanvas;
+            countCanvas++;
+            // Массивы для осей:
+            var dataArr1 = graphObj[obj].graphArrCountTimeY;
+            var dataArr2 = graphObj[obj].graphArrDamageY;
+            var dataArr3 = graphArrAverDamageY; // ось х соотв. с dataArr1
+            var dataArr4 = graphObj[obj].graphArrGoldY; // для 2-го графика - gold, ось х соотв. с dataArr1
+            var dataArr5 = graphArrAverGoldY; // ось х соотв. с dataArr1
+            // Печать шапки
+            $('#contentBox').append(
+                '<div class="graphTitleBox">' +
+                    '<span class="graphTitleText1">' +
+                        '<span class="graphTitleColor1"></span>' +
+                        'Урон' +
+                        '<span class="graphTitleColor2"></span>' +
+                        'Средний урон' +
+                    '</span>' +
+                    '<span class="graphTitleText2">' +
+                        '<span class="graphTitleColor3"></span>' +
+                        'Доход' +
+                        '<span class="graphTitleColor2"></span>' +
+                        'Средний доход' +
+                    '</span>' +
+                '</div>'
+            );
+            // Печать графиков
+            $('#contentBox').append(
+                '<div class="graphBox">' +
+                    '<div class="graphBox1">' +
+                        '<canvas id="' + canvasDamageId + '"></canvas>' +
+                        '<div class="graphArr1">' +
+                            prnArrAver(dataArr3) +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="graphBox2">' +
+                        '<canvas id="' + canvasGoldId + '"></canvas>' +
+                        '<div class="graphArr1">' +
+                            prnArrAver(dataArr5) +
+                        '</div>' +
+                    '</div><div style="clear: both;"></div>' +
+                    '<div class="titleText5">' +
+                        obj +
+                    '</div><br>' +
+                '</div>'
+            );
+            // График1: Задание опций для компонента Chart:
+            var lineChartData1 = {
+                // (ось X) значения из массива:
+                labels : dataArr1,
+                datasets : [
+                    {
+                        label: "-",
+                        fillColor : "rgba(151,187,205,0.2)",
+                        strokeColor : "rgba(151,187,205,1)",
+                        pointColor : "rgba(151,187,205,1)",
+                        pointStrokeColor : "#fff",
+                        pointHighlightFill : "#fff",
+                        pointHighlightStroke : "rgba(151,187,205,1)",
+                        // (ось Y) значения из массива:
+                        data : dataArr2,
+                    },
+                    {
+                        label: "-",
+                        fillColor : "rgba(151,187,205,0.2)",
+                        strokeColor : "#FFDFDF", // цвет линии
+                        pointColor : "#FFDFDF", // цвет точек
+                        pointStrokeColor : "#fff",
+                        pointHighlightFill : "#fff", // цвет внутри точки при наведении курсора
+                        pointHighlightStroke : "#FFDFDF", // цвет ободка точки при наведении курсора
+                        // (ось Y) значения из массива:
+                        data : dataArr3
+                    }
+                ]
+            };
+            // Построение графиков
+            var ctx1 = document.getElementById(canvasDamageId).getContext("2d");
+            window.myLine = new Chart(ctx1).Line(lineChartData1, {
+                responsive: true,
+                datasetFill : false, //  не заполнять цветом ниже графика кривой
+            });
+            // График1: Задание опций для компонента Chart:
+            var lineChartData2 = {
+                // (ось X) значения из массива:
+                labels : dataArr1,
+                datasets : [
+                    {
+                        label: "-",
+                        fillColor : "rgba(151,187,205,0.2)",
+                        strokeColor : "#ABF8AB", // #89B843
+                        pointColor : "#ABF8AB",
+                        pointStrokeColor : "#fff",
+                        pointHighlightFill : "#fff",
+                        pointHighlightStroke : "#ABF8AB",
+                        // (ось Y) значения из массива:
+                        data : dataArr4,
+                    },
+                    {
+                        label: "-",
+                        fillColor : "rgba(151,187,205,0.2)",
+                        strokeColor : "#FFDFDF", // цвет линии
+                        pointColor : "#FFDFDF", // цвет точек
+                        pointStrokeColor : "#fff",
+                        pointHighlightFill : "#fff", // цвет внутри точки при наведении курсора
+                        pointHighlightStroke : "#FFDFDF", // цвет ободка точки при наведении курсора
+                        // (ось Y) значения из массива:
+                        data : dataArr5
+                    }
+                ]
+            };
+            // Построение графиков
+            var ctx2 = document.getElementById(canvasGoldId).getContext("2d");
+            window.myLine = new Chart(ctx2).Line(lineChartData2, {
+                responsive: true,
+                datasetFill : false, //  не заполнять цветом ниже графика кривой
+            });
+        }
+    }
+    if(noGraph == true) { // Вывести сообщение если нет боев для построения
+        $('#contentBox').append(
+            'Нет боев для построения, для графика необходимо более 5ти боев на танк.'
+        );
+    }
+} // закрытие F: executeGraphics()
 
     /* > Вывод контента страницы: Карты #tabMaps <
     =============================================================== */
